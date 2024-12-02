@@ -1,0 +1,18 @@
+spring:
+    profiles:
+        active: dev
+    application:
+        name: Cataloger
+    mvc:
+        format:
+            date: yyyy-MM-dd
+        pathmatch:
+            matching-strategy: ant_path_matcher
+
+server:
+    port: 8080
+
+logging:
+    level:
+        root: INFO
+        com.citronix: DEBUG
