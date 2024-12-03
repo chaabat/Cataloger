@@ -1,5 +1,10 @@
 package com.Cataloger.dto.response;
 
-public class CategoryResponse {
+import lombok.Data;
 
+@Data
+public class CategoryResponse {
+    private Long id;
+    private String name;
+    private String description;
 }

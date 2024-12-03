@@ -1,0 +1,43 @@
+version: "3.1"
+
+services:
+  db:
+    container_name: Cataloger-DB
+    image: "mariadb:latest"
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_DATABASE: "Cataloger"
+      MYSQL_USER: "admin"
+      MYSQL_PASSWORD: "admin"
+      MYSQL_ROOT_PASSWORD: "root"
+    volumes:
+      - db:/var/lib/mysql
+    networks:
+      - network-data
+
+  spring-app:
+    container_name: Cataloger
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8085:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mariadb://db:3306/Cataloger
+      - SPRING_DATASOURCE_USERNAME=admin
+      - SPRING_DATASOURCE_PASSWORD=admin
+      - SWAGGER_ACTIVATION=false
+    networks:
+      - network-data
+    depends_on:
+      - db
+
+networks:
+  network-data:
+    driver: bridge
+
+volumes:
+  db:
+    driver: local
