@@ -1,52 +1,69 @@
 package com.Cataloger.controller;
 
-import com.Cataloger.dto.request.ProductRequest;
-import com.Cataloger.dto.response.ProductResponse;
-import com.Cataloger.service.interfaces.ProductService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.Cataloger.dto.request.ProductRequest;
+import com.Cataloger.dto.response.ProductResponse;
+import com.Cataloger.service.interfaces.ProductService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/products")
 @RequiredArgsConstructor
 public class ProductController {
 
     private final ProductService productService;
 
-    @GetMapping
+    // User endpoints
+    @GetMapping("/api/user/products")
     public ResponseEntity<Page<ProductResponse>> getAllProducts(Pageable pageable) {
         return ResponseEntity.ok(productService.getAllProducts(pageable));
     }
 
-    @GetMapping("/search")
-    public ResponseEntity<Page<ProductResponse>> searchProducts(@RequestParam String designation, Pageable pageable) {
+    @GetMapping("/api/user/products/search")
+    public ResponseEntity<Page<ProductResponse>> searchProducts(
+            @RequestParam String designation, 
+            Pageable pageable) {
         return ResponseEntity.ok(productService.searchProducts(designation, pageable));
     }
 
-    @GetMapping("/category/{categoryId}")
-    public ResponseEntity<Page<ProductResponse>> getProductsByCategory(@PathVariable Long categoryId, Pageable pageable) {
+    @GetMapping("/api/user/products/category/{categoryId}")
+    public ResponseEntity<Page<ProductResponse>> getProductsByCategory(
+            @PathVariable Long categoryId, 
+            Pageable pageable) {
         return ResponseEntity.ok(productService.getProductsByCategory(categoryId, pageable));
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/api/user/products/{id}")
     public ResponseEntity<ProductResponse> getProduct(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProduct(id));
     }
 
-    @PostMapping
-    public ResponseEntity<ProductResponse> createProduct(@RequestBody ProductRequest request) {
+    // Admin endpoints
+    @PostMapping("/api/admin/products")
+    public ResponseEntity<ProductResponse> createProduct(@Valid @RequestBody ProductRequest request) {
         return ResponseEntity.status(201).body(productService.createProduct(request));
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<ProductResponse> updateProduct(@PathVariable Long id, @RequestBody ProductRequest request) {
+    @PutMapping("/api/admin/products/{id}")
+    public ResponseEntity<ProductResponse> updateProduct(
+            @PathVariable Long id, 
+            @Valid @RequestBody ProductRequest request) {
         return ResponseEntity.ok(productService.updateProduct(id, request));
     }
 
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/api/admin/products/{id}")
     public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
         return ResponseEntity.noContent().build();

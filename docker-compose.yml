@@ -6,7 +6,7 @@ services:
     image: "mariadb:latest"
     restart: always
     ports:
-      - "3306:3306"
+      - "3301:3306"
     environment:
       MYSQL_DATABASE: "Cataloger"
       MYSQL_USER: "admin"
@@ -23,7 +23,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "8085:8080"
+      - "8089:8080"
     environment:
       - SPRING_DATASOURCE_URL=jdbc:mariadb://db:3306/Cataloger
       - SPRING_DATASOURCE_USERNAME=admin

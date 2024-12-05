@@ -6,6 +6,6 @@ import org.springframework.data.domain.Pageable;
 import com.Cataloger.entity.Category;
 
 public interface CategoryRepository extends JpaRepository<Category, Long> {
-    Page<Category> findByNameContainingIgnoreCase(String name, Pageable pageable);
+    Page<Category> findByName(String name, Pageable pageable);
     boolean existsByName(String name);
 }

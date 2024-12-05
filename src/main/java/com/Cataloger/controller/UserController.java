@@ -1,17 +1,28 @@
 package com.Cataloger.controller;
 
-import com.Cataloger.dto.request.UserRequest;
-import com.Cataloger.dto.response.UserResponse;
-import com.Cataloger.service.interfaces.UserService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
+import com.Cataloger.dto.request.UserRequest;
+import com.Cataloger.dto.response.UserResponse;
+import com.Cataloger.entity.Role;
+import com.Cataloger.service.interfaces.UserService;
+
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/users")
+@RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -19,26 +30,22 @@ public class UserController {
 
     @GetMapping
     public ResponseEntity<Page<UserResponse>> getAllUsers(Pageable pageable) {
-        Page<UserResponse> users = userService.getAllUsers(pageable);
-        return ResponseEntity.ok(users);
+        return ResponseEntity.ok(userService.getAllUsers(pageable));
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
-        UserResponse user = userService.getUser(id);
-        return ResponseEntity.ok(user);
-    }
-
-    @PostMapping
-    public ResponseEntity<UserResponse> createUser(@RequestBody UserRequest request) {
-        UserResponse user = userService.createUser(request);
-        return ResponseEntity.status(201).body(user);
+        return ResponseEntity.ok(userService.getUser(id));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<UserResponse> updateUser(@PathVariable Long id, @RequestBody UserRequest request) {
-        UserResponse user = userService.updateUser(id, request);
-        return ResponseEntity.ok(user);
+    public ResponseEntity<UserResponse> updateUser(@PathVariable Long id, @Valid @RequestBody UserRequest request) {
+        return ResponseEntity.ok(userService.updateUser(id, request));
+    }
+
+    @PatchMapping("/{id}/roles")
+    public ResponseEntity<UserResponse> updateRole(@PathVariable Long id, @RequestParam Role role) {
+        return ResponseEntity.ok(userService.updateRole(id, role));
     }
 
     @DeleteMapping("/{id}")

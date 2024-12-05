@@ -1,324 +1,196 @@
 {
     "info": {
-      "name": "API Collection",
-      "description": "Collection of endpoints for User, Category, and Product controllers.",
+      "name": "Cataloger API v2",
       "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
     },
     "item": [
       {
-        "name": "User",
+        "name": "Authentication",
         "item": [
           {
-            "name": "Get All Users",
-            "request": {
-              "method": "GET",
-              "header": [],
-              "url": {
-                "raw": "{{baseUrl}}/users",
-                "host": ["{{baseUrl}}"],
-                "path": ["users"]
-              }
-            },
-            "response": []
-          },
-          {
-            "name": "Get User by ID",
-            "request": {
-              "method": "GET",
-              "header": [],
-              "url": {
-                "raw": "{{baseUrl}}/users/1",
-                "host": ["{{baseUrl}}"],
-                "path": ["users", "1"]
-              }
-            },
-            "response": []
-          },
-          {
-            "name": "Create User",
+            "name": "Register",
             "request": {
               "method": "POST",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
+              "url": "{{base_url}}/auth/register",
               "body": {
                 "mode": "raw",
-                "raw": "{\"login\":\"johndoe\",\"password\":\"securePassword123\",\"name\":\"John Doe\",\"email\":\"johndoe@example.com\"}"
-              },
-              "url": {
-                "raw": "{{baseUrl}}/users",
-                "host": ["{{baseUrl}}"],
-                "path": ["users"]
+                "raw": {
+                  "login": "admin",
+                  "password": "admin123",
+                  "role": "ROLE_ADMIN",
+                  "active": true
+                }
               }
-            },
-            "response": []
+            }
           },
           {
-            "name": "Update User",
+            "name": "Login",
             "request": {
-              "method": "PUT",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
+              "method": "POST",
+              "url": "{{base_url}}/auth/login",
               "body": {
                 "mode": "raw",
-                "raw": "{\"login\":\"johnnydoe\",\"password\":\"newSecurePassword456\",\"name\":\"John Doe\",\"email\":\"johnnydoe@example.com\"}"
-              },
-              "url": {
-                "raw": "{{baseUrl}}/users/1",
-                "host": ["{{baseUrl}}"],
-                "path": ["users", "1"]
+                "raw": {
+                  "login": "admin",
+                  "password": "admin123"
+                }
               }
-            },
-            "response": []
-          },
-          {
-            "name": "Delete User",
-            "request": {
-              "method": "DELETE",
-              "header": [],
-              "url": {
-                "raw": "{{baseUrl}}/users/1",
-                "host": ["{{baseUrl}}"],
-                "path": ["users", "1"]
-              }
-            },
-            "response": []
+            }
           }
         ]
       },
       {
-        "name": "Category",
+        "name": "Categories",
         "item": [
           {
-            "name": "Get All Categories",
+            "name": "Get All Categories (User)",
             "request": {
               "method": "GET",
-              "header": [],
-              "url": {
-                "raw": "{{baseUrl}}/api/categories",
-                "host": ["{{baseUrl}}"],
-                "path": ["api", "categories"]
-              }
-            },
-            "response": []
+              "url": "{{base_url}}/api/user/categories?page=0&size=10&sort=name,asc"
+            }
           },
           {
-            "name": "Search Categories",
+            "name": "Search Categories (User)",
             "request": {
               "method": "GET",
-              "header": [],
-              "url": {
-                "raw": "{{baseUrl}}/api/categories/search?name=Electronics",
-                "host": ["{{baseUrl}}"],
-                "path": ["api", "categories", "search"],
-                "query": [
-                  {
-                    "key": "name",
-                    "value": "Electronics"
-                  }
-                ]
-              }
-            },
-            "response": []
+              "url": "{{base_url}}/api/user/categories/search?name=Electronics&page=0&size=10&sort=name,asc"
+            }
           },
           {
-            "name": "Get Category by ID",
+            "name": "Get Category by ID (User)",
             "request": {
               "method": "GET",
-              "header": [],
-              "url": {
-                "raw": "{{baseUrl}}/api/categories/1",
-                "host": ["{{baseUrl}}"],
-                "path": ["api", "categories", "1"]
-              }
-            },
-            "response": []
+              "url": "{{base_url}}/api/user/categories/1"
+            }
           },
           {
-            "name": "Create Category",
+            "name": "Create Category (Admin)",
             "request": {
               "method": "POST",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
+              "url": "{{base_url}}/api/admin/categories",
               "body": {
                 "mode": "raw",
-                "raw": "{\"name\":\"Electronics\",\"description\":\"Devices and gadgets.\"}"
-              },
-              "url": {
-                "raw": "{{baseUrl}}/api/categories",
-                "host": ["{{baseUrl}}"],
-                "path": ["api", "categories"]
+                "raw": {
+                  "name": "Electronics",
+                  "description": "Electronic devices and accessories"
+                }
               }
-            },
-            "response": []
+            }
           },
           {
-            "name": "Update Category",
+            "name": "Update Category (Admin)",
             "request": {
               "method": "PUT",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
+              "url": "{{base_url}}/api/admin/categories/1",
               "body": {
                 "mode": "raw",
-                "raw": "{\"name\":\"Updated Electronics\",\"description\":\"Updated description for devices and gadgets.\"}"
-              },
-              "url": {
-                "raw": "{{baseUrl}}/api/categories/1",
-                "host": ["{{baseUrl}}"],
-                "path": ["api", "categories", "1"]
+                "raw": {
+                  "name": "Electronics Updated",
+                  "description": "Updated description"
+                }
               }
-            },
-            "response": []
+            }
           },
           {
-            "name": "Delete Category",
+            "name": "Delete Category (Admin)",
             "request": {
               "method": "DELETE",
-              "header": [],
-              "url": {
-                "raw": "{{baseUrl}}/api/categories/1",
-                "host": ["{{baseUrl}}"],
-                "path": ["api", "categories", "1"]
-              }
-            },
-            "response": []
+              "url": "{{base_url}}/api/admin/categories/1"
+            }
           }
         ]
       },
       {
-        "name": "Product",
+        "name": "Products",
         "item": [
           {
-            "name": "Get All Products",
+            "name": "Get All Products (User)",
             "request": {
               "method": "GET",
-              "header": [],
-              "url": {
-                "raw": "{{baseUrl}}/api/products",
-                "host": ["{{baseUrl}}"],
-                "path": ["api", "products"]
-              }
-            },
-            "response": []
+              "url": "{{base_url}}/api/user/products?page=0&size=10&sort=designation,asc"
+            }
           },
           {
-            "name": "Search Products",
+            "name": "Search Products (User)",
             "request": {
               "method": "GET",
-              "header": [],
-              "url": {
-                "raw": "{{baseUrl}}/api/products/search?designation=Smartphone",
-                "host": ["{{baseUrl}}"],
-                "path": ["api", "products", "search"],
-                "query": [
-                  {
-                    "key": "designation",
-                    "value": "Smartphone"
-                  }
-                ]
-              }
-            },
-            "response": []
+              "url": "{{base_url}}/api/user/products/search?designation=Laptop&page=0&size=10&sort=designation,asc"
+            }
           },
           {
-            "name": "Get Products by Category",
+            "name": "Get Products by Category (User)",
             "request": {
               "method": "GET",
-              "header": [],
-              "url": {
-                "raw": "{{baseUrl}}/api/products/category/1",
-                "host": ["{{baseUrl}}"],
-                "path": ["api", "products", "category", "1"]
-              }
-            },
-            "response": []
+              "url": "{{base_url}}/api/user/products/category/1?page=0&size=10&sort=designation,asc"
+            }
           },
           {
-            "name": "Get Product by ID",
+            "name": "Get Product by ID (User)",
             "request": {
               "method": "GET",
-              "header": [],
-              "url": {
-                "raw": "{{baseUrl}}/api/products/1",
-                "host": ["{{baseUrl}}"],
-                "path": ["api", "products", "1"]
-              }
-            },
-            "response": []
+              "url": "{{base_url}}/api/user/products/1"
+            }
           },
           {
-            "name": "Create Product",
+            "name": "Create Product (Admin)",
             "request": {
               "method": "POST",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
+              "url": "{{base_url}}/api/admin/products",
               "body": {
                 "mode": "raw",
-                "raw": "{\"designation\":\"Smartphone\",\"price\":699.99,\"categoryId\":1,\"description\":\"Latest model smartphone with advanced features.\"}"
-              },
-              "url": {
-                "raw": "{{baseUrl}}/api/products",
-                "host": ["{{baseUrl}}"],
-                "path": ["api", "products"]
+                "raw": {
+                  "designation": "Laptop",
+                  "description": "High-performance laptop",
+                  "price": 999.99,
+                  "quantity": 10,
+                  "categoryId": 1
+                }
               }
-            },
-            "response": []
+            }
           },
           {
-            "name": "Update Product",
+            "name": "Update Product (Admin)",
             "request": {
               "method": "PUT",
-              "header": [
-                {
-                  "key": "Content-Type",
-                  "value": "application/json"
-                }
-              ],
+              "url": "{{base_url}}/api/admin/products/1",
               "body": {
                 "mode": "raw",
-                "raw": "{\"designation\":\"Updated Smartphone\",\"price\":749.99,\"categoryId\":1,\"description\":\"Updated description for the latest model smartphone.\"}"
-              },
-              "url": {
-                "raw": "{{baseUrl}}/api/products/1",
-                "host": ["{{baseUrl}}"],
-                "path": ["api", "products", "1"]
+                "raw": {
+                  "designation": "Updated Laptop",
+                  "description": "Updated description",
+                  "price": 1099.99,
+                  "quantity": 15,
+                  "categoryId": 1
+                }
               }
-            },
-            "response": []
+            }
           },
           {
-            "name": "Delete Product",
+            "name": "Delete Product (Admin)",
             "request": {
               "method": "DELETE",
-              "header": [],
-              "url": {
-                "raw": "{{baseUrl}}/api/products/1",
-                "host": ["{{baseUrl}}"],
-                "path": ["api", "products", "1"]
-              }
-            },
-            "response": []
+              "url": "{{base_url}}/api/admin/products/1"
+            }
           }
         ]
+      },
+      {
+        "name": "User Management",
+        "item": [
+          {
+            "name": "Update User Role (Admin)",
+            "request": {
+              "method": "PATCH",
+              "url": "{{base_url}}/api/users/1/role?role=ROLE_ADMIN"
+            }
+          }
+        ]
+      }
+    ],
+    "variable": [
+      {
+        "key": "base_url",
+        "value": "http://localhost:8080"
       }
     ]
   }

@@ -1,25 +1,26 @@
 package com.Cataloger.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
-import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
 public class ProductRequest {
-    @NotNull(message = "Designation cannot be null")
-    @Size(min = 1, max = 100, message = "Designation must be between 1 and 100 characters")
+
+    @NotBlank(message = "Designation is mandatory")
+    @Size(max = 100, message = "Designation must not exceed 100 characters")
     private String designation;
 
-    @NotNull(message = "Prix cannot be null")
-    @Positive(message = "Prix must be positive")
+    @NotNull(message = "Price is mandatory")
+    @Positive(message = "Price must be positive")
     private Double prix;
 
-    @NotNull(message = "Quantite cannot be null")
-    @PositiveOrZero(message = "Quantite must be zero or positive")
-    private Integer quantite;
+    @NotNull(message = "Quantity is mandatory")
+    @Positive(message = "Quantity must be positive")
+    private int quantite;
 
-    @NotNull(message = "Category ID cannot be null")
-    private Long categoryId;
+    @NotNull(message = "Category ID is mandatory")
+    private Long categoryId; 
 }

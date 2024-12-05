@@ -7,13 +7,15 @@ import com.Cataloger.dto.request.ProductRequest;
 import com.Cataloger.dto.response.ProductResponse;
 import com.Cataloger.entity.Product;
 
-@Mapper(componentModel = "spring", uses = {CategoryMapper.class})
+@Mapper(componentModel = "spring")
 public interface ProductMapper {
+
     ProductResponse toResponse(Product product);
-    
-    @Mapping(target = "category.id", source = "categoryId")
+
+//    @Mapping(target = "category", source = "categoryId")
     Product toEntity(ProductRequest request);
-    
-    @Mapping(target = "category.id", source = "categoryId")
+
+//    @Mapping(target = "id", ignore = true)
+//    @Mapping(target = "category", source = "categoryId")
     void updateEntity(ProductRequest request, @MappingTarget Product product);
 }

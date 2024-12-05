@@ -1,23 +1,24 @@
 package com.Cataloger.service.implementation;
 
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
 import com.Cataloger.dto.request.CategoryRequest;
 import com.Cataloger.dto.response.CategoryResponse;
 import com.Cataloger.entity.Category;
 import com.Cataloger.mapper.CategoryMapper;
 import com.Cataloger.repository.CategoryRepository;
 import com.Cataloger.service.interfaces.CategoryService;
-import jakarta.persistence.EntityNotFoundException;
 
 @Service
 @RequiredArgsConstructor
 @Transactional
 public class CategoryServiceImpl implements CategoryService {
-    
+
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
 
@@ -29,7 +30,7 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public Page<CategoryResponse> searchCategories(String name, Pageable pageable) {
-        return categoryRepository.findByNameContainingIgnoreCase(name, pageable)
+        return categoryRepository.findByName(name, pageable)
                 .map(categoryMapper::toResponse);
     }
 
@@ -44,8 +45,9 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
         if (categoryRepository.existsByName(request.getName())) {
-            throw new IllegalArgumentException("Category name already exists");
+            throw new IllegalArgumentException("Category with this name already exists");
         }
+
         Category category = categoryMapper.toEntity(request);
         category = categoryRepository.save(category);
         return categoryMapper.toResponse(category);
@@ -56,13 +58,13 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse updateCategory(Long id, CategoryRequest request) {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Category not found with id: " + id));
-        
+
         if (!category.getName().equals(request.getName()) && 
             categoryRepository.existsByName(request.getName())) {
-            throw new IllegalArgumentException("Category name already exists");
+            throw new IllegalArgumentException("Category with this name already exists");
         }
-        
-        // categoryMapper.updateEntity(request, category);
+
+        categoryMapper.updateEntity(request, category);
         category = categoryRepository.save(category);
         return categoryMapper.toResponse(category);
     }

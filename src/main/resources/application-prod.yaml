@@ -1,10 +1,17 @@
 spring:
-  datasource:
-    url: jdbc:mariadb://localhost:3306/cataloger
-    username: chaabat
-    password: nothing
-    driver-class-name: org.mariadb.jdbc.Driver
-  jpa:
-    hibernate:
-      ddl-auto: update
-    show-sql: true
+    datasource:
+        url: jdbc:mariadb://localhost:3306/cataloger
+        username: root
+        password:
+        driver-class-name: org.mariadb.jdbc.Driver
+    jpa:
+        hibernate:
+            ddl-auto: update
+        show-sql: true
+    session:
+        store-type: jdbc
+        jdbc:
+            initialize-schema: always
+            schema: classpath:org/springframework/session/jdbc/schema-@@platform@@.sql
+            table-name: SPRING_SESSION
+        timeout: 30m
