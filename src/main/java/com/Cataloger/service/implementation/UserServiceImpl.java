@@ -1,5 +1,6 @@
 package com.Cataloger.service.implementation;
 
+<<<<<<< HEAD
 import java.util.Collections;
 
 import org.springframework.context.annotation.Primary;
@@ -134,4 +135,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         user.setRole(role);
         return userMapper.toResponse(userRepository.save(user));
     }
+=======
+public class UserServiceImpl {
+
+>>>>>>> parent of 9d2fc01 (category , product and user done)
 }

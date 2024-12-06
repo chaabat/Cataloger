@@ -1,5 +1,6 @@
 package com.Cataloger.service.interfaces;
 
+<<<<<<< HEAD
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -16,4 +17,8 @@ public interface UserService {
     UserResponse login(String login, String password);
     UserResponse updateRole(Long id, Role role);
     UserResponse findByLogin(String login);
+=======
+public class UserService {
+
+>>>>>>> parent of 9d2fc01 (category , product and user done)
 }

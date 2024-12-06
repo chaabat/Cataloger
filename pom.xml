@@ -15,8 +15,11 @@
 	<description>Catalogue de produits avec Authentification</description>
 	<properties>
 		<java.version>17</java.version>
+<<<<<<< HEAD
 		<mapstruct.version>1.5.5.Final</mapstruct.version>
 		<org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
+=======
+>>>>>>> parent of 9d2fc01 (category , product and user done)
 	</properties>
 	<dependencies>
 		<dependency>
@@ -83,10 +86,6 @@
 			<version>${org.mapstruct.version}</version>
 			<scope>provided</scope>
 		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-security</artifactId>
-		</dependency>
 	</dependencies>
 
 	<build>
@@ -103,6 +102,7 @@
 					</excludes>
 				</configuration>
 			</plugin>
+<<<<<<< HEAD
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -128,6 +128,8 @@
 					</annotationProcessorPaths>
 				</configuration>
 			</plugin>
+=======
+>>>>>>> parent of 9d2fc01 (category , product and user done)
 		</plugins>
 	</build>
 

@@ -1,5 +1,6 @@
 package com.Cataloger.controller;
 
+<<<<<<< HEAD
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
@@ -53,4 +54,8 @@ public class UserController {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
     }
+=======
+public class UserController {
+
+>>>>>>> parent of 9d2fc01 (category , product and user done)
 }
