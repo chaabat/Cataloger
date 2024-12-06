@@ -5,76 +5,123 @@ import javax.sql.DataSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
+import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationEventPublisher;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
-import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.annotation.web.configurers.HeadersConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.provisioning.JdbcUserDetailsManager;
 import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 
+import lombok.RequiredArgsConstructor;
+
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
+@RequiredArgsConstructor
 @Profile("prod")
 public class ProdSecurityConfig {
-
     private final DataSource dataSource;
     private final PasswordEncoder passwordEncoder;
 
-    public ProdSecurityConfig(DataSource dataSource, PasswordEncoder passwordEncoder) {
-        this.dataSource = dataSource;
-        this.passwordEncoder = passwordEncoder;
-    }
-
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(AbstractHttpConfigurer::disable)
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/login", "/api/auth/register", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**").permitAll()
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
-                .anyRequest().authenticated()
-            )
-            .logout(logout -> logout
-                .permitAll()
-                .logoutSuccessUrl("/api/auth/login?logout=true")
-            )
+        return http
+            .csrf(csrf -> csrf.disable())
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
                 .maximumSessions(1)
-                .maxSessionsPreventsLogin(false)
-            );
-
-        return http.build();
+                .maxSessionsPreventsLogin(false))
+            .securityContext(context -> context.requireExplicitSave(false))
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
+                .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**").permitAll()
+                .anyRequest().authenticated())
+            .exceptionHandling(exception -> exception
+                .accessDeniedHandler((request, response, ex) -> {
+                    response.setStatus(HttpStatus.FORBIDDEN.value());
+                    response.getWriter().write("Access denied: Insufficient privileges");
+                })
+                .authenticationEntryPoint((request, response, ex) -> {
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                    response.getWriter().write("Authentication required");
+                }))
+            .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::disable))
+            .formLogin(form -> form.disable())
+            .httpBasic(basic -> basic.disable())
+            .build();
     }
 
     @Bean
     public UserDetailsManager userDetailsManager() {
-        var manager = new JdbcUserDetailsManager(dataSource);
+        var manager = new JdbcUserDetailsManager(dataSource) {
+            @Override
+            public boolean userExists(String username) {
+                try {
+                    return getJdbcTemplate().queryForObject(
+                        "select count(*) from users where login = ?", 
+                        Integer.class, 
+                        username) == 1;
+                } catch (Exception e) {
+                    return false;
+                }
+            }
+        };
+        
         manager.setUsersByUsernameQuery(
-            "SELECT login AS username, password, active AS enabled FROM users WHERE login = ? AND active = true");
+            "select login as username, password, active as enabled from users where login=? and active=true");
         manager.setAuthoritiesByUsernameQuery(
-            "SELECT login AS username, role AS authority FROM users WHERE login = ?");
+            "select login as username, role as authority from users where login=?");
+
         return manager;
     }
 
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
-        var provider = new DaoAuthenticationProvider();
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
         provider.setUserDetailsService(userDetailsManager());
         provider.setPasswordEncoder(passwordEncoder);
+        provider.setHideUserNotFoundExceptions(false);
+        
+        provider.setPreAuthenticationChecks(userDetails -> {
+            if (!userDetails.isEnabled()) {
+                throw new DisabledException("User account is disabled");
+            }
+        });
+        
+        provider.setPostAuthenticationChecks(userDetails -> {
+            if (userDetails.getAuthorities().isEmpty()) {
+                throw new BadCredentialsException("User has no roles assigned");
+            }
+        });
+
         return provider;
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+    public AuthenticationManager authenticationManager() {
+        var manager = new ProviderManager(authenticationProvider());
+        
+        manager.setAuthenticationEventPublisher(new AuthenticationEventPublisher() {
+            @Override
+            public void publishAuthenticationSuccess(Authentication authentication) {}
+
+            @Override
+            public void publishAuthenticationFailure(AuthenticationException exception, Authentication authentication) {}
+        });
+        
+        return manager;
     }
 }
