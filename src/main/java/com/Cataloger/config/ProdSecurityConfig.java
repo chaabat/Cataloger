@@ -6,56 +6,75 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.JdbcUserDetailsManager;
+import org.springframework.security.provisioning.UserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
-
-import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
-@RequiredArgsConstructor
 @Profile("prod")
 public class ProdSecurityConfig {
-    
+
     private final DataSource dataSource;
     private final PasswordEncoder passwordEncoder;
 
-    @Bean
-    public AuthenticationManager authManager(HttpSecurity http) throws Exception {
-        AuthenticationManagerBuilder authBuilder = http.getSharedObject(AuthenticationManagerBuilder.class);
-        
-        authBuilder.jdbcAuthentication()
-            .dataSource(dataSource)
-            .usersByUsernameQuery("select login as username, password, active as enabled from users where login=? and active=true")
-            .authoritiesByUsernameQuery("select login as username, role as authority from users where login=?")
-            .passwordEncoder(passwordEncoder);
-        
-        return authBuilder.build();
+    public ProdSecurityConfig(DataSource dataSource, PasswordEncoder passwordEncoder) {
+        this.dataSource = dataSource;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(csrf -> csrf.disable())
+            .csrf(AbstractHttpConfigurer::disable)
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/auth/login", "/api/auth/register", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**").permitAll()
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
+                .anyRequest().authenticated()
+            )
+            .logout(logout -> logout
+                .permitAll()
+                .logoutSuccessUrl("/api/auth/login?logout=true")
+            )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.ALWAYS)
                 .maximumSessions(1)
-                .maxSessionsPreventsLogin(false))
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/admin/**").hasRole("ADMIN")
-                .requestMatchers("/api/user/**").hasAnyRole("USER", "ADMIN")
-                .requestMatchers("/auth/**", "/swagger-ui/**", "/v3/api-docs/**", "/h2-console/**").permitAll()
-                .anyRequest().authenticated())
-            .headers(headers -> headers.frameOptions().disable())
-            .formLogin(form -> form.disable())
-            .httpBasic(basic -> basic.disable());
+                .maxSessionsPreventsLogin(false)
+            );
 
         return http.build();
+    }
+
+    @Bean
+    public UserDetailsManager userDetailsManager() {
+        var manager = new JdbcUserDetailsManager(dataSource);
+        manager.setUsersByUsernameQuery(
+            "SELECT login AS username, password, active AS enabled FROM users WHERE login = ? AND active = true");
+        manager.setAuthoritiesByUsernameQuery(
+            "SELECT login AS username, role AS authority FROM users WHERE login = ?");
+        return manager;
+    }
+
+    @Bean
+    public DaoAuthenticationProvider authenticationProvider() {
+        var provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsManager());
+        provider.setPasswordEncoder(passwordEncoder);
+        return provider;
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 }

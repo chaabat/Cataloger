@@ -1,6 +1,5 @@
 package com.Cataloger.service.implementation;
 
-<<<<<<< HEAD
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -103,8 +102,4 @@ public class ProductServiceImpl implements ProductService {
         }
         productRepository.deleteById(id);
     }
-=======
-public class ProductServiceImpl {
-
->>>>>>> parent of 9d2fc01 (category , product and user done)
 }
