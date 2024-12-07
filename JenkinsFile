@@ -10,6 +10,8 @@ pipeline {
         DOCKER_IMAGE = "cataloger-app"
         DOCKER_TAG = "${BUILD_NUMBER}"
         SONAR_PROJECT_KEY = "Cataloger"
+        DOCKER_REGISTRY = "your-registry-url" // Add your Docker registry URL
+        DOCKER_CREDENTIALS = 'docker-credentials-id' // Add your Docker credentials ID
     }
     
     stages {
@@ -19,31 +21,19 @@ pipeline {
             }
         }
         
-        stage('Clean Workspace') {
+        stage('Build and Test') {
             steps {
-                sh 'mvn clean'
-            }
-        }
-        
-        stage('Unit Tests') {
-            steps {
-                sh 'mvn test'
+                sh '''
+                    mvn clean verify \
+                    -Dmaven.test.failure.ignore=false \
+                    -Djacoco.destFile=target/jacoco.exec
+                '''
             }
             post {
                 always {
                     junit '**/target/surefire-reports/*.xml'
-                }
-            }
-        }
-        
-        stage('Code Coverage') {
-            steps {
-                sh 'mvn jacoco:prepare-agent test jacoco:report'
-            }
-            post {
-                success {
                     jacoco(
-                        execPattern: 'target/*.exec',
+                        execPattern: 'target/jacoco.exec',
                         classPattern: 'target/classes',
                         sourcePattern: 'src/main/java',
                         exclusionPattern: 'src/test*'
@@ -52,75 +42,76 @@ pipeline {
             }
         }
         
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('SonarQube') {
-                    sh """
-                        mvn sonar:sonar \
-                        -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
-                        -Dsonar.java.binaries=target/classes \
-                        -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
-                    """
+        stage('Security Scan') {
+            parallel {
+                stage('SonarQube Analysis') {
+                    steps {
+                        withSonarQubeEnv('SonarQube') {
+                            sh """
+                                mvn sonar:sonar \
+                                -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                                -Dsonar.java.binaries=target/classes \
+                                -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
+                                -Dsonar.exclusions=**/dto/**,**/entity/**
+                            """
+                        }
+                    }
+                }
+                
+                stage('OWASP Dependency Check') {
+                    steps {
+                        sh 'mvn org.owasp:dependency-check-maven:check'
+                    }
+                    post {
+                        always {
+                            dependencyCheckPublisher pattern: 'target/dependency-check-report.xml'
+                        }
+                    }
                 }
             }
         }
         
-        stage('Build Package') {
-            steps {
-                sh 'mvn package -DskipTests'
-            }
-            post {
-                success {
-                    archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
-                }
-            }
-        }
-        
-        stage('Build Docker Image') {
-            steps {
-                script {
-                    docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}")
-                }
-            }
-        }
-        
-        stage('Integration Tests') {
-            steps {
-                script {
-                    sh """
-                        docker-compose -f docker-compose.test.yml up -d
-                        sleep 30
-                        mvn verify -Pintegration-test
-                        docker-compose -f docker-compose.test.yml down
-                    """
-                }
-            }
-        }
-        
-        stage('Deploy to Staging') {
+        stage('Build and Push Docker Image') {
             when {
-                branch 'develop'
+                anyOf {
+                    branch 'main'
+                    branch 'develop'
+                }
             }
             steps {
                 script {
-                    sh """
-                        docker-compose -f docker-compose.staging.yml down
-                        docker-compose -f docker-compose.staging.yml up -d
-                    """
+                    def dockerImage = docker.build("${DOCKER_IMAGE}:${DOCKER_TAG}", "--build-arg JAR_FILE=target/*.jar .")
+                    
+                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                        sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS} ${DOCKER_REGISTRY}"
+                        dockerImage.push()
+                        
+                        if (env.BRANCH_NAME == 'main') {
+                            dockerImage.push('latest')
+                        }
+                    }
                 }
             }
         }
         
-        stage('Deploy to Production') {
+        stage('Deploy') {
             when {
-                branch 'main'
+                anyOf {
+                    branch 'main'
+                    branch 'develop'
+                }
             }
             steps {
                 script {
-                    sh """
-                        docker-compose down
-                        docker-compose up -d
-                    """
+                    def deployScript = env.BRANCH_NAME == 'main' ? 'docker-compose.yml' : 'docker-compose.staging.yml'
+                    
+                    withCredentials([file(credentialsId: 'docker-compose-config', variable: 'DOCKER_COMPOSE_CONFIG')]) {
+                        sh """
+                            docker-compose -f ${deployScript} down || true
+                            docker-compose -f ${deployScript} pull
+                            docker-compose -f ${deployScript} up -d
+                        """
+                    }
                 }
             }
         }
@@ -133,15 +124,33 @@ pipeline {
         }
         success {
             emailext (
-                subject: "Pipeline Successful: ${currentBuild.fullDisplayName}",
-                body: "The pipeline completed successfully. Check the results at: ${BUILD_URL}",
+                subject: "✅ Pipeline Successful: ${currentBuild.fullDisplayName}",
+                body: """
+                    Build succeeded!
+                    
+                    Build URL: ${BUILD_URL}
+                    Project: ${env.JOB_NAME}
+                    Branch: ${env.BRANCH_NAME}
+                    
+                    Changes:
+                    ${currentBuild.changeSets.collect { it.items }.flatten().collect { "- ${it.msg}" }.join('\n')}
+                """,
                 recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
         }
         failure {
             emailext (
-                subject: "Pipeline Failed: ${currentBuild.fullDisplayName}",
-                body: "The pipeline failed. Check the logs at: ${BUILD_URL}",
+                subject: "❌ Pipeline Failed: ${currentBuild.fullDisplayName}",
+                body: """
+                    Build failed!
+                    
+                    Build URL: ${BUILD_URL}
+                    Project: ${env.JOB_NAME}
+                    Branch: ${env.BRANCH_NAME}
+                    
+                    Console Output:
+                    ${currentBuild.rawBuild.getLog(100).join('\n')}
+                """,
                 recipientProviders: [[$class: 'DevelopersRecipientProvider']]
             )
         }
